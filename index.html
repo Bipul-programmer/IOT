@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Real-time water quality monitoring and contamination prediction using IoT and ML.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📈</span> Analytics
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📡</span> LoRa Mesh
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+            </nav>
+            <div class="connectivity-status">
+                <div class="status-indicator online"></div>
+                <span>LoRa Mesh: Online</span>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="welcome-text">
+                    <h2>Water Quality Overview</h2>
+                    <div class="selector-container">
+                        <select id="village-selector" class="custom-select">
+                            <option value="all">All Villages</option>
+                        </select>
+                        <p id="node-info">Live data from Mesh Network</p>
+                    </div>
+                </div>
+                <div class="status-panels">
+                    <div class="prediction-panel" id="prediction-panel">
+                        <span class="label">Safety Status:</span>
+                        <span class="status safe" id="prediction-status">SAFE</span>
+                    </div>
+                    <div class="prediction-panel" id="disease-panel">
+                        <span class="label">Disease Risk:</span>
+                        <span class="status safe" id="disease-status">NONE</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sensor Grid -->
+            <section class="sensor-grid">
+                <div class="sensor-card" id="card-ph">
+                    <div class="sensor-info">
+                        <span class="sensor-label">pH Level</span>
+                        <span class="sensor-value" id="val-ph">7.2</span>
+                    </div>
+                    <div class="sensor-icon">🧪</div>
+                    <div class="sensor-trend">Stable</div>
+                </div>
+                <div class="sensor-card" id="card-tds">
+                    <div class="sensor-info">
+                        <span class="sensor-label">TDS (ppm)</span>
+                        <span class="sensor-value" id="val-tds">450</span>
+                    </div>
+                    <div class="sensor-icon">💎</div>
+                    <div class="sensor-trend">Optimized</div>
+                </div>
+                <div class="sensor-card" id="card-turbidity">
+                    <div class="sensor-info">
+                        <span class="sensor-label">Turbidity (NTU)</span>
+                        <span class="sensor-value" id="val-turbidity">1.5</span>
+                    </div>
+                    <div class="sensor-icon">🌫️</div>
+                    <div class="sensor-trend">Low</div>
+                </div>
+                <div class="sensor-card" id="card-temp">
+                    <div class="sensor-info">
+                        <span class="sensor-label">Temperature (°C)</span>
+                        <span class="sensor-value" id="val-temp">24.5</span>
+                    </div>
+                    <div class="sensor-icon">🌡️</div>
+                    <div class="sensor-trend">Normal</div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-container">
+                <div class="chart-box">
+                    <h3>pH & TDS Trend</h3>
+                    <canvas id="qualityChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>Temperature History</h3>
+                    <canvas id="tempChart"></canvas>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="main.js"></script>
+</body>
+
+</html>
