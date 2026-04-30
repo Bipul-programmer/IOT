@@ -58,6 +58,41 @@ const App = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Critical Alert Banner */}
+      {latest?.quality !== 'Safe' && (
+        <motion.div 
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          style={{ 
+            backgroundColor: '#ef4444', 
+            color: 'white', 
+            padding: '1.5rem', 
+            borderRadius: '12px', 
+            marginBottom: '2rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1.5rem',
+            boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.4)'
+          }}
+        >
+          <ShieldAlert size={48} strokeWidth={2.5} />
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '800' }}>CRITICAL CONTAMINATION ALERT</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+              {latest?.reasons?.map((reason, idx) => (
+                <span key={idx} style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.4rem 0.8rem', borderRadius: '20px', fontSize: '0.9rem', fontWeight: '600' }}>
+                  • {reason}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ margin: 0, opacity: 0.8, fontSize: '0.8rem' }}>ACTION REQUIRED</p>
+            <h3 style={{ margin: 0 }}>DO NOT DRINK</h3>
+          </div>
+        </motion.div>
+      )}
+
       <motion.div 
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,16 +107,28 @@ const App = () => {
       <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
         {/* Potability Statement Card */}
         <motion.div whileHover={{ scale: 1.01 }} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', borderLeft: `8px solid ${latest?.quality === 'Safe' ? '#22c55e' : '#ef4444'}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-            {getStatusIcon(latest?.quality)}
-            <div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem' }}>
+            <div style={{ marginTop: '0.5rem' }}>{getStatusIcon(latest?.quality)}</div>
+            <div style={{ flex: 1 }}>
               <h3 style={{ margin: 0, color: '#94a3b8' }}>Current Assessment</h3>
               <h1 style={{ fontSize: '2.8rem', margin: '0.5rem 0' }}>{latest?.quality === 'Safe' ? 'SAFE WATER' : 'CONTAMINATED'}</h1>
-              <p style={{ margin: 0, fontSize: '1.1rem', color: '#cbd5e1' }}>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '1.1rem', color: '#cbd5e1' }}>
                 {latest?.quality === 'Safe' ? 
                   "This water source is verified potable and safe for immediate use." : 
                   "High contamination detected! This water is unsafe for consumption."}
               </p>
+              
+              {/* Contamination Reasons */}
+              {latest?.reasons && latest.reasons.length > 0 && (
+                <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#fca5a5', fontSize: '0.9rem', textTransform: 'uppercase' }}>Analysis Insights</h4>
+                  <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#f87171', fontSize: '0.95rem' }}>
+                    {latest.reasons.map((reason, idx) => (
+                      <li key={idx} style={{ marginBottom: '0.25rem' }}>{reason}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

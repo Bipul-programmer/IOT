@@ -147,6 +147,29 @@ body {
     border-color: var(--accent-blue);
 }
 
+.download-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 12px;
+    border: 1px solid var(--accent-blue);
+    background: transparent;
+    color: var(--accent-blue);
+    font-family: var(--font-main);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 1rem;
+}
+
+.download-btn:hover {
+    background: var(--accent-blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
 .welcome-text h2 {
     font-size: 1.8rem;
     margin-bottom: 0.3rem;

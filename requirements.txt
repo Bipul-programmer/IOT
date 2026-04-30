@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pydantic
+motor
+pandas
+numpy
+joblib
+scikit-learn
+imbalanced-learn
+pyserial
+requests
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+motor
+pymongo

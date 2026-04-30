@@ -8,11 +8,12 @@ def simulate_iot_device(sensor_id="IOT_SENSOR_001"):
     print(f"Starting IoT Simulator for {sensor_id}...")
     
     while True:
-        # Simulate only the 4 required features
-        ph = round(random.uniform(6.5, 8.5), 2)
-        temperature = round(random.uniform(18.0, 32.0), 1)
-        turbidity = round(random.uniform(0.0, 5.0), 2)
-        tds = round(random.uniform(200, 800), 0)
+        # Simulate based on provided real-time data ranges
+        ph = round(random.uniform(6.47, 6.52), 2)
+        temperature = round(random.uniform(24.4, 24.6), 2)
+        turbidity = round(random.uniform(600, 620), 1)
+        tds = round(random.uniform(80, 110), 2)
+
         
         payload = {
             "sensor_id": sensor_id,

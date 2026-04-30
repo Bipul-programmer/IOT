@@ -98,16 +98,37 @@ document.addEventListener('DOMContentLoaded', () => {
     function updatePredictionUI(data) {
         const safetyEl = document.getElementById('prediction-status');
         const diseaseEl = document.getElementById('disease-status');
+        const reasonsContainer = document.getElementById('reasons-container');
+        const reasonsList = document.getElementById('reasons-list');
+        const criticalBanner = document.getElementById('critical-banner');
+        const criticalReasons = document.getElementById('critical-reasons');
 
         // Handle both simple and advanced results
         const isSafe = data.water_safety ? data.water_safety.is_safe : (data.result === 'Safe');
         const disease = data.disease_prediction ? data.disease_prediction.predicted_disease : 'None';
+        const reasons = data.reasons || [];
 
         safetyEl.textContent = isSafe ? 'SAFE' : 'CONTAMINATED';
         safetyEl.className = `status ${isSafe ? 'safe' : 'danger'}`;
 
         diseaseEl.textContent = disease.toUpperCase();
         diseaseEl.className = `status ${disease === 'No Disease' || disease === 'None' ? 'safe' : 'danger'}`;
+
+        // Update Reasons & Banner
+        if (!isSafe) {
+            // Main Container
+            if (reasons.length > 0) {
+                reasonsList.innerHTML = reasons.map(r => `<li>${r}</li>`).join('');
+                reasonsContainer.style.display = 'block';
+                
+                // Critical Banner
+                criticalReasons.textContent = "Reasons: " + reasons.join(" | ");
+            }
+            criticalBanner.style.display = 'block';
+        } else {
+            reasonsContainer.style.display = 'none';
+            criticalBanner.style.display = 'none';
+        }
     }
 
     function updateDashboard(sensor) {
@@ -198,6 +219,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.value !== 'all') {
             selectSensor(e.target.value);
         }
+    });
+
+    document.getElementById('download-csv-btn').addEventListener('click', () => {
+        window.location.href = `${API_BASE}/download_csv`;
     });
 
     // --- Init ---
