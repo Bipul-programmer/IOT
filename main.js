@@ -32,7 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 labels: Array(10).fill(''),
                 datasets: [
                     { label: 'pH Level', data: Array(10).fill(7), borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, tension: 0.4 },
-                    { label: 'TDS (scaled)', data: Array(10).fill(4.5), borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.4 }
+                    { label: 'TDS (scaled)', data: Array(10).fill(4.5), borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Turbidity (NTU)', data: Array(10).fill(1.5), borderColor: '#fca5a5', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4 }
                 ]
             },
             options: chartConfig
@@ -55,8 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             sensors = data.sensors;
             populateVillageSelector();
-            if (sensors.length > 0 && !currentSensorId) {
-                selectSensor(sensors[0].id);
+            if (sensors.length > 0) {
+                // Prioritize the physical sensor if it exists
+                const physical = sensors.find(s => s.id === 'ESP32_PHYSICAL');
+                if (physical) {
+                    selectSensor(physical.id);
+                } else if (!currentSensorId) {
+                    selectSensor(sensors[0].id);
+                }
             }
         } catch (err) {
             console.error('Error fetching sensors:', err);
@@ -145,13 +152,61 @@ document.addEventListener('DOMContentLoaded', () => {
         qualityChart.data.datasets[0].data.shift();
         qualityChart.data.datasets[1].data.push(sensor.readings.tds / 100);
         qualityChart.data.datasets[1].data.shift();
+        qualityChart.data.datasets[2].data.push(sensor.readings.turbidity);
+        qualityChart.data.datasets[2].data.shift();
         qualityChart.update();
 
         tempChart.data.datasets[0].data.push(sensor.readings.temperature);
         tempChart.data.datasets[0].data.shift();
         tempChart.update();
 
+        // Update Trend Indicators
+        updateTrends(sensor.readings);
+
         getPrediction(sensor);
+    }
+
+    function updateTrends(readings) {
+        const phTrend = document.querySelector('#card-ph .sensor-trend');
+        const tdsTrend = document.querySelector('#card-tds .sensor-trend');
+        const turbTrend = document.querySelector('#card-turbidity .sensor-trend');
+        const tempTrend = document.querySelector('#card-temp .sensor-trend');
+
+        // pH Trend
+        if (readings.ph < 6.5 || readings.ph > 8.5) {
+            phTrend.textContent = 'Abnormal';
+            phTrend.style.color = 'var(--danger-color)';
+        } else {
+            phTrend.textContent = 'Stable';
+            phTrend.style.color = 'var(--safe-color)';
+        }
+
+        // TDS Trend
+        if (readings.tds > 500) {
+            tdsTrend.textContent = 'High';
+            tdsTrend.style.color = 'var(--danger-color)';
+        } else {
+            tdsTrend.textContent = 'Optimized';
+            tdsTrend.style.color = 'var(--safe-color)';
+        }
+
+        // Turbidity Trend
+        if (readings.turbidity > 5) {
+            turbTrend.textContent = 'Critical';
+            turbTrend.style.color = 'var(--danger-color)';
+        } else {
+            turbTrend.textContent = 'Low';
+            turbTrend.style.color = 'var(--safe-color)';
+        }
+
+        // Temp Trend
+        if (readings.temperature > 30) {
+            tempTrend.textContent = 'Warm';
+            tempTrend.style.color = 'var(--warning-color)';
+        } else {
+            tempTrend.textContent = 'Normal';
+            tempTrend.style.color = 'var(--safe-color)';
+        }
     }
 
     function setupWebSocket() {
@@ -191,16 +246,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentSensorId) return;
             const sensor = sensors.find(s => s.id === currentSensorId) || sensors[0];
             
-            // Randomize data
+            // Realistic Randomized data based on sensor node logic
             const newData = {
                 id: sensor.id,
                 village: sensor.village,
                 lat: sensor.location?.lat || 0,
                 lng: sensor.location?.lng || 0,
-                ph: sensor.readings.ph + (Math.random() - 0.5) * 0.2,
-                tds: sensor.readings.tds + (Math.random() - 0.5) * 20,
-                turbidity: sensor.readings.turbidity + (Math.random() - 0.5) * 0.3,
-                temperature: sensor.readings.temperature + (Math.random() - 0.5) * 0.5
+                ph: 6.5 + (Math.random() - 0.5) * 0.5,
+                tds: 300 + (Math.random() - 0.5) * 100,
+                turbidity: 2.5 + (Math.random() - 0.5) * 4,
+                temperature: 24 + (Math.random() - 0.5) * 5
             };
 
             // Post to backend to trigger WebSocket broadcast
@@ -229,6 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initCharts();
     fetchSensors().then(() => {
         setupWebSocket();
-        startSimulation();
+        // Simulation removed to ensure real sensor data is displayed
     });
 });

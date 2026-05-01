@@ -37,8 +37,51 @@ const App = () => {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+
+    // --- WebSocket Integration for Real-Time ---
+    const ws = new WebSocket('ws://localhost:8000/ws');
+    
+    ws.onopen = () => console.log("WebSocket Connected to Backend");
+    ws.onerror = (err) => console.error("WebSocket Error:", err);
+    
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'sensor_update') {
+        console.log("Real-time update received:", msg.sensor);
+        const newReading = {
+          sensor_id: msg.sensor.id,
+          timestamp: new Date().toISOString(),
+          sensor_data: {
+            ph: msg.sensor.ph,
+            temperature: msg.sensor.temperature,
+            turbidity: msg.sensor.turbidity,
+            tds: msg.sensor.tds
+          },
+          quality: msg.sensor.quality,
+          contamination_level: msg.sensor.contamination_level || (msg.sensor.quality === 'Safe' ? 0 : 1),
+          potability_score: msg.sensor.potability_score || 1,
+          reasons: msg.sensor.reasons
+        };
+
+        setLatest(newReading);
+        setData(prev => {
+          const newData = [...prev.slice(-19), {
+            time: new Date().toLocaleTimeString(),
+            ph: msg.sensor.ph,
+            temperature: msg.sensor.temperature,
+            turbidity: msg.sensor.turbidity,
+            tds: msg.sensor.tds,
+            contamination: newReading.contamination_level,
+            quality: msg.sensor.quality
+          }];
+          return newData;
+        });
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   const getStatusIcon = (quality) => {

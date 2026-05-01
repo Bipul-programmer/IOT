@@ -15,7 +15,7 @@ app = FastAPI(title="Water Quality Monitoring System")
 
 # Global counter for periodic retraining
 ingestion_counter = 0
-RETRAIN_THRESHOLD = 50 # Retrain every 50 new readings
+RETRAIN_THRESHOLD = 50 
 COLLECTED_DATA_CSV = "collected_data.csv"
 
 app.add_middleware(
@@ -26,16 +26,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     print("Initializing Water Quality System...")
-    # 1. Try to load existing model
     success = load_model_into_cache()
     if not success:
         print("No existing model found. Training initial model...")
         await train_model_best()
+    yield
+    # Shutdown
+    print("Shutting down Water Quality System...")
 
-# --- WebSocket Manager ---
+app = FastAPI(title="Water Quality Monitoring System", lifespan=lifespan)
 class ConnectionManager:
     def __init__(self):
         self.active: list[WebSocket] = []
@@ -87,15 +92,11 @@ async def root():
 async def ingest_data(reading: SensorReading, background_tasks: BackgroundTasks):
     global ingestion_counter
     
-    # Perform prediction
     prediction_result = predict_potability(reading.model_dump())
-    
-    # Save raw data to MongoDB
     data_id = await save_sensor_data(reading.model_dump())
     
     quality_label = "Safe" if prediction_result["potable"] == 1 else "Unsafe"
     
-    # Prepare prediction record
     prediction_record = {
         "sensor_id": reading.sensor_id,
         "reading_id": data_id,
@@ -107,7 +108,6 @@ async def ingest_data(reading: SensorReading, background_tasks: BackgroundTasks)
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
     }
     
-    # Save prediction to MongoDB
     await save_prediction(prediction_record)
     
     # --- CSV Logging ---
@@ -125,7 +125,7 @@ async def ingest_data(reading: SensorReading, background_tasks: BackgroundTasks)
             'timestamp': prediction_record["timestamp"]
         })
     
-    # Broadcast to WebSockets for real-time dashboard updates
+    # Broadcast to WebSockets
     await manager.broadcast({
         "type": "sensor_update",
         "sensor": {
@@ -140,10 +140,8 @@ async def ingest_data(reading: SensorReading, background_tasks: BackgroundTasks)
         }
     })
     
-    # Periodic retraining logic
     ingestion_counter += 1
     if ingestion_counter >= RETRAIN_THRESHOLD:
-        print(f"Threshold reached ({ingestion_counter}). Triggering model retraining...")
         background_tasks.add_task(train_model_best)
         ingestion_counter = 0
     
@@ -155,7 +153,6 @@ async def ingest_data(reading: SensorReading, background_tasks: BackgroundTasks)
         "contamination_level": prediction_result["contamination_level"]
     }
 
-# Compatibility alias for the vanilla JS frontend
 @app.post("/public/sensor_data")
 async def public_ingest(reading: SensorReading, background_tasks: BackgroundTasks):
     return await ingest_data(reading, background_tasks)
@@ -211,7 +208,7 @@ async def download_csv():
             filename=f"water_data_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             media_type="text/csv"
         )
-    raise HTTPException(status_code=404, detail="CSV file not found. No data ingested yet.")
+    raise HTTPException(status_code=404, detail="CSV file not found.")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

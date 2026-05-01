@@ -6,7 +6,7 @@ import threading
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from imblearn.over_sampling import SMOTE
 
 MODEL_PATH = "water_quality_model.joblib"
@@ -40,9 +40,19 @@ def load_model_into_cache():
     return False
 
 async def train_model_best():
-    """Trains the model using data from MongoDB and saves it to disk."""
-    from database import get_training_data
-    data = await get_training_data()
+    """Trains the model using local CSV data and saves it to disk."""
+    data = []
+    
+    # 1. Load from new_sensorData.csv
+    for csv_file in ["new_sensorData.csv", "collected_data.csv"]:
+        if os.path.exists(csv_file):
+            try:
+                df_csv = pd.read_csv(csv_file)
+                needed = ["ph", "temperature", "turbidity", "tds", "Potability"]
+                if all(col in df_csv.columns for col in needed):
+                    data.extend(df_csv[needed].to_dict(orient='records'))
+            except Exception as e:
+                print(f"Error reading {csv_file}: {e}")
     
     if not data:
         print("No training data found in MongoDB.")
@@ -82,21 +92,36 @@ async def train_model_best():
     X_train_scaled = scaler.fit_transform(X_train_res)
     X_test_scaled = scaler.transform(X_test)
     
-    # Train
-    model = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42, class_weight='balanced')
-    model.fit(X_train_scaled, y_train_res)
+    # Compare Models
+    models = {
+        "RandomForest": RandomForestClassifier(n_estimators=200, max_depth=12, random_state=42),
+        "GradientBoosting": GradientBoostingClassifier(n_estimators=200, learning_rate=0.1, max_depth=5, random_state=42)
+    }
     
-    print(f"Model trained. Accuracy: {model.score(X_test_scaled, y_test):.2f}")
+    best_model = None
+    best_score = 0
+    best_name = ""
+    
+    for name, model_obj in models.items():
+        model_obj.fit(X_train_scaled, y_train_res)
+        score = model_obj.score(X_test_scaled, y_test)
+        print(f"Evaluated {name}. Accuracy: {score:.4f}")
+        if score > best_score:
+            best_score = score
+            best_model = model_obj
+            best_name = name
+            
+    print(f"Best model chosen: {best_name} with accuracy {best_score:.4f}")
     
     # Save to disk
-    joblib.dump(model, MODEL_PATH)
+    joblib.dump(best_model, MODEL_PATH)
     joblib.dump(scaler, SCALER_PATH)
     joblib.dump(imputer, IMPUTER_PATH)
     joblib.dump(features, FEATURES_PATH)
     
     # Refresh cache
     load_model_into_cache()
-    return model
+    return best_model
 
 def get_contamination_reasons(data):
     """Analyzes features to identify specific reasons for contamination."""

@@ -1,16 +1,21 @@
 import asyncio
-import os
-from database import import_csv_to_db
+import pandas as pd
+from database import sensor_data_collection
 
-async def main():
-    csv_path = "water_potability_clean.csv"
-    if not os.path.exists(csv_path):
-        print(f"Error: {csv_path} not found.")
-        return
+async def import_csv(file_path):
+    print(f"Importing data from {file_path} to MongoDB...")
+    df = pd.read_csv(file_path)
+    records = df.to_dict('records')
     
-    print(f"Importing {csv_path} into MongoDB...")
-    count = await import_csv_to_db(csv_path)
-    print(f"Successfully imported {count} records into 'training_data' collection.")
+    if records:
+        await sensor_data_collection.insert_many(records)
+        print(f"Successfully imported {len(records)} records.")
+    else:
+        print("No records found in CSV.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import sys
+    if len(sys.argv) > 1:
+        asyncio.run(import_csv(sys.argv[1]))
+    else:
+        print("Usage: python import_csv.py <path_to_csv>")
